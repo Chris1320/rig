@@ -1,0 +1,15 @@
+[project]
+name = "rig"
+version = "0.0.1"
+description = "Manage multiple profiles for each agent harnesses."
+readme = "README.md"
+authors = [{ name = "Chris1320", email = "me@chrisfromnowhere.me" }]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+rig = "rig:main"
+
+[build-system]
+requires = ["uv_build>=0.12.15,<0.13.0"]
+build-backend = "uv_build"
