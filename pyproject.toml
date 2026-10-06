@@ -1,6 +1,6 @@
 [project]
 name = "rig"
-version = "0.0.1"
+version = "0.1.0"
 description = "Manage multiple profiles for each agent harnesses."
 readme = "README.md"
 authors = [{ name = "Chris1320", email = "me@chrisfromnowhere.me" }]
@@ -43,4 +43,3 @@ disable = [
     "unused-argument",
     "fixme",
 ]
-
