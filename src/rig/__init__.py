@@ -1,2 +1,10 @@
+from rig.cli import app
+
+
 def main() -> None:
-    print("Hello from rig!")
+    # TODO: if --tui or no args, launch TUI
+    app()
+
+
+if __name__ == "__main__":
+    main()
