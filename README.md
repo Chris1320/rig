@@ -6,6 +6,11 @@
     <i>Manage multiple profiles for AI agent harnesses.</i>
 </p>
 
+> [!warning]
+> **This project is still under development**!
+>
+> Many features are not yet implemented and/or unstable. Please use at your own risk.
+
 `rig` is a profile manager for AI agent harnesses, written in Python. It isolates
 configurations, credentials, and conversation data between profiles, enabling
 switching between work, personal, and other environments without conflicts.
