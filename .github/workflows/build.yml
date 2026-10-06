@@ -1,0 +1,60 @@
+---
+name: Release
+permissions:
+  contents: write
+
+"on":
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.14"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Detect version bump
+        id: version_check
+        run: >
+          ./scripts/check_version_bump.sh
+          "${{ github.event.before }}"
+          "${{ github.event_name }}"
+
+      - name: Install dependencies
+        if: steps.version_check.outputs.should_release == 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y patchelf
+          uv sync --group dev
+
+      - name: Build outputs
+        if: steps.version_check.outputs.should_release == 'true'
+        run: ./scripts/build.sh all
+
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          name: v${{ steps.version_check.outputs.current_version }}
+          tag_name: v${{ steps.version_check.outputs.current_version }}
+          files: dist/*
+          generate_release_notes: true
