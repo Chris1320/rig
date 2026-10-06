@@ -21,3 +21,14 @@ switching between work, personal, and other environments without conflicts.
 - Spawn the harness subprocess with environment overrides or temporary symlinks
   without altering your shell or global environment variables.
 - Export profiles into shareable archives.
+
+## Roadmap
+
+- [ ] (CLI) Create new profiles
+- [ ] (CLI) List existing profiles
+- [ ] (CLI) Run harnesses in specific profiles
+- [ ] (CLI) Use existing profiles
+- [ ] (CLI) Delete existing profiles
+- [ ] (CLI) Export profiles for sharing or backup
+- [ ] (CLI) Import recently exported profiles
+- [ ] Interactive Terminal UI
