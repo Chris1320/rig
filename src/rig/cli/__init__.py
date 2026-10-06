@@ -1,9 +1,10 @@
 from typing import Annotated
 
 import typer
+from rich.console import Console
 
 from rig.cli.profile import app as profile_app
-from rig.info import DESCRIPTION, NAME
+from rig.info import DESCRIPTION, NAME, VERSION
 
 app = typer.Typer(
     help=f"{NAME} - {DESCRIPTION}",
@@ -32,3 +33,12 @@ def setup() -> None:
 @app.command("status")
 def status() -> None:
     """Show status of harnesses and active profiles."""
+
+
+@app.command("version")
+def version() -> None:
+    """Show the version of the application."""
+
+    c = Console()
+    c.print(f"[bold cyan]{NAME}[/bold cyan] - [dim]{DESCRIPTION}[/dim]")
+    c.print(f"Version: [bold green]{VERSION}[/bold green]")
