@@ -21,7 +21,10 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "black>=26.10.0",
+    "isort>=9.0.2",
     "nuitka>=4.2.2",
+    "pylint>=4.1.2",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
 ]
@@ -29,3 +32,15 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-function-docstring",
+    "unused-argument",
+    "fixme",
+]
+
