@@ -5,7 +5,12 @@ description = "Manage multiple profiles for each agent harnesses."
 readme = "README.md"
 authors = [{ name = "Chris1320", email = "me@chrisfromnowhere.me" }]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pydantic>=2.10.0",
+    "rich>=13.9.0",
+    "textual>=1.0.0",
+    "typer>=0.15.0",
+]
 
 [project.scripts]
 rig = "rig:main"
@@ -13,3 +18,12 @@ rig = "rig:main"
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
