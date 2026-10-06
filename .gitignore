@@ -173,3 +173,6 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+# Nuitka build directory
+build-nuitka/
+
