@@ -4,8 +4,9 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
+from rig.cli.misc import require_setup_complete
 from rig.cli.profile import app as profile_app
-from rig.config import config
+from rig.config import runtime_config
 from rig.info import DEFAULT_DATAPATH, DESCRIPTION, NAME, VERSION
 
 app = typer.Typer(
@@ -33,9 +34,9 @@ def global_options(
 ) -> None:
     """Supply global options."""
 
-    config.datapath = datadir
-    config.json_mode = json_mode
-    config.verbose = verbose
+    runtime_config.datapath = datadir
+    runtime_config.json_mode = json_mode
+    runtime_config.verbose = verbose
 
 
 @app.command(
@@ -48,6 +49,8 @@ def cmd_run(
 ) -> None:
     """Run an agent harness under a specific profile."""
 
+    require_setup_complete()
+
 
 @app.command("setup")
 def cmd_setup() -> None:
@@ -58,6 +61,8 @@ def cmd_setup() -> None:
 def cmd_status() -> None:
     """Show status of harnesses and active profiles."""
 
+    require_setup_complete()
+
 
 @app.command("config")
 def cmd_config() -> None:
@@ -66,8 +71,8 @@ def cmd_config() -> None:
     c = Console()
     c.print(f"[bold cyan]{NAME}[/bold cyan] - [dim]{DESCRIPTION}[/dim]")
     c.print(f"Version: [bold green]{VERSION}[/bold green]\n")
-    c.print("[bold]Configuration:[/bold]")
-    for key, value in config.__dict__.items():  # pyright: ignore[reportAny]
+    c.print("[bold]Runtime Configuration:[/bold]")
+    for key, value in runtime_config.__dict__.items():  # pyright: ignore[reportAny]
         c.print(f"  [bold]{key}[/bold]: {value}")
 
 

@@ -5,6 +5,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from rig.cli.misc import require_setup_complete
+
 app = typer.Typer(help="Manage profiles of an agent harness.")
 
 console = Console()
@@ -18,6 +20,8 @@ def cmd_list(
     ] = None,
 ) -> None:
     """List all profiles."""
+
+    require_setup_complete()
 
     table = Table(title="Agent Harness Profiles", header_style="bold cyan")
     table.add_column("Harness", style="bold")
@@ -42,6 +46,8 @@ def cmd_create(
 ) -> None:
     """Create a new profile."""
 
+    require_setup_complete()
+
 
 @app.command("use")
 def cmd_use(
@@ -49,6 +55,8 @@ def cmd_use(
     name: Annotated[str, typer.Argument(help="Profile name to set as default")],
 ) -> None:
     """Set a profile as the default."""
+
+    require_setup_complete()
 
 
 @app.command("delete")
@@ -61,6 +69,8 @@ def cmd_delete(
     ] = False,
 ) -> None:
     """Delete a profile."""
+
+    require_setup_complete()
 
 
 @app.command("export")
@@ -81,6 +91,8 @@ def cmd_export(
 ) -> None:
     """Export a profile as an archive."""
 
+    require_setup_complete()
+
 
 @app.command("import")
 def cmd_import(
@@ -96,3 +108,5 @@ def cmd_import(
     ] = False,
 ) -> None:
     """Import a profile from an archive."""
+
+    require_setup_complete()
