@@ -17,7 +17,14 @@ from rig.config import (
     RigConfig,
     runtime_config,
 )
-from rig.info import DEFAULT_DATAPATH, DESCRIPTION, NAME, VERSION
+from rig.info import (
+    CURRENT_CONFIG_VERSION,
+    DEFAULT_CONFIGPATH,
+    DEFAULT_DATAPATH,
+    DESCRIPTION,
+    NAME,
+    VERSION,
+)
 
 app = typer.Typer(
     help=f"{NAME} - {DESCRIPTION}",
@@ -29,12 +36,10 @@ app.add_typer(profile_app, name="profile")
 
 @app.callback()
 def global_options(
-    datadir: Annotated[
+    configdir: Annotated[
         Path,
-        typer.Option(
-            "--datadir", "-d", help="Directory for configuration and data files"
-        ),
-    ] = DEFAULT_DATAPATH,
+        typer.Option("--config-dir", "-c", help="The configuration path"),
+    ] = DEFAULT_CONFIGPATH,
     json_mode: Annotated[
         bool, typer.Option("--json", "-j", help="Output in JSON format")
     ] = False,
@@ -44,7 +49,7 @@ def global_options(
 ) -> None:
     """Supply global options."""
 
-    runtime_config.datapath = datadir
+    runtime_config.configpath = configdir
     runtime_config.json_mode = json_mode
     runtime_config.verbose = verbose
 
@@ -64,22 +69,28 @@ def cmd_run(
 
 @app.command("setup")
 def cmd_setup(
-    clean: Annotated[
-        bool,
-        typer.Option("--clean", "-c", help="Remove existing configuration directory"),
-    ] = False,
+    datadir: Annotated[
+        Path, typer.Option("--data-dir", "-d", help="Directory for data files")
+    ] = DEFAULT_DATAPATH,
 ) -> None:
     """Run the interactive setup wizard."""
 
     c = Console()
-    if clean and runtime_config.datapath.exists():
-        vprint("Removing existing configuration and data files...")
-        shutil.rmtree(runtime_config.datapath)
+    if runtime_config.configpath.exists() and any(runtime_config.configpath.iterdir()):
+        c.print(
+            f"[bold yellow]WARNING[/bold yellow]: Configuration file already exists at [bold green]{runtime_config.config_file.absolute()}[/bold green]."
+        )
+        raise typer.Exit(code=2)
+
+    if datadir.exists() and any(datadir.iterdir()):
+        c.print(
+            f"[bold yellow]WARNING[/bold yellow]: Data directory already exists at [bold green]{datadir.absolute()}[/bold green]."
+        )
+        raise typer.Exit(code=3)
 
     c.print(
-        f"Creating configuration and data directory at [bold green]{runtime_config.datapath}[/bold green]"
+        f"Creating configuration directory at [bold green]{runtime_config.configpath.absolute()}[/bold green]"
     )
-    runtime_config.datapath.mkdir(parents=True, exist_ok=True)
     claude_code_config = ClaudeCodeHarnessConfig()
     opencode_config = OpencodeHarnessConfig()
     antigravity_config = AntigravityHarnessConfig()
@@ -88,11 +99,18 @@ def cmd_setup(
         opencode=opencode_config,
         antigravity=antigravity_config,
     )
-    rig_config = RigConfig(harness_config)
+    rig_config = RigConfig(
+        harness=harness_config, datapath=datadir, version=CURRENT_CONFIG_VERSION
+    )
 
     new_config = asdict(rig_config)
+    runtime_config.configpath.mkdir(parents=True, exist_ok=True)
+    _ = runtime_config.config_file.write_text(
+        json.dumps(new_config, default=str, indent=2)
+    )
 
-    _ = runtime_config.configpath.write_text(json.dumps(new_config, indent=2))
+    c.print(f"Creating data directory at [bold green]{datadir.absolute()}[/bold green]")
+    datadir.mkdir(parents=True, exist_ok=True)
 
 
 @app.command("status")

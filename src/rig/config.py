@@ -1,19 +1,19 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from rig.info import CURRENT_CONFIG_VERSION, DEFAULT_DATAPATH
+from rig.info import CURRENT_CONFIG_VERSION, DEFAULT_CONFIGPATH, DEFAULT_DATAPATH
 
 
 @dataclass()
 class RuntimeConfig:
-    datapath: Path = DEFAULT_DATAPATH
+    configpath: Path = DEFAULT_CONFIGPATH
     json_mode: bool = False
     verbose: bool = False
 
     @property
-    def configpath(self) -> Path:
+    def config_file(self) -> Path:
         """The path to the configuration file."""
-        return self.datapath / "config.json"
+        return self.configpath / "config.json"
 
 
 @dataclass()
@@ -47,6 +47,7 @@ class HarnessConfig:
 @dataclass()
 class RigConfig:
     harness: HarnessConfig
+    datapath: Path = DEFAULT_DATAPATH
     version: float = CURRENT_CONFIG_VERSION
 
 
