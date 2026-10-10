@@ -6,6 +6,8 @@ from rig.info import CURRENT_CONFIG_VERSION, DEFAULT_CONFIGPATH, DEFAULT_DATAPAT
 
 @dataclass()
 class RuntimeConfig:
+    """Runtime configuration for the application."""
+
     configpath: Path = DEFAULT_CONFIGPATH
     json_mode: bool = False
     verbose: bool = False
@@ -39,6 +41,10 @@ class AntigravityHarnessConfig:
 
 @dataclass()
 class HarnessConfig:
+    """This dataclass acts as the container for the configs of supported
+    agent harnesses.
+    """
+
     claude_code: ClaudeCodeHarnessConfig
     opencode: OpencodeHarnessConfig
     antigravity: AntigravityHarnessConfig
@@ -46,6 +52,8 @@ class HarnessConfig:
 
 @dataclass()
 class RigConfig:
+    """Configuration for rig saved in the configuration file."""
+
     harness: HarnessConfig
     datapath: Path = DEFAULT_DATAPATH
     version: float = CURRENT_CONFIG_VERSION

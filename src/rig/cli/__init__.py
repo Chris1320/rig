@@ -1,5 +1,4 @@
 import json
-import shutil
 from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated
@@ -7,7 +6,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from rig.cli.misc import require_setup_complete, vprint
+from rig.cli.misc import require_setup_complete
 from rig.cli.profile import app as profile_app
 from rig.config import (
     AntigravityHarnessConfig,
@@ -40,12 +39,8 @@ def global_options(
         Path,
         typer.Option("--config-dir", "-c", help="The configuration path"),
     ] = DEFAULT_CONFIGPATH,
-    json_mode: Annotated[
-        bool, typer.Option("--json", "-j", help="Output in JSON format")
-    ] = False,
-    verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+    json_mode: Annotated[bool, typer.Option("--json", "-j", help="Output in JSON format")] = False,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Enable verbose output")] = False,
 ) -> None:
     """Supply global options."""
 
@@ -54,9 +49,7 @@ def global_options(
     runtime_config.verbose = verbose
 
 
-@app.command(
-    "run", context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
+@app.command("run", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def cmd_run(
     ctx: typer.Context,
     harness: Annotated[str, typer.Argument(help="Harness name")],
@@ -69,9 +62,7 @@ def cmd_run(
 
 @app.command("setup")
 def cmd_setup(
-    datadir: Annotated[
-        Path, typer.Option("--data-dir", "-d", help="Directory for data files")
-    ] = DEFAULT_DATAPATH,
+    datadir: Annotated[Path, typer.Option("--data-dir", "-d", help="Directory for data files")] = DEFAULT_DATAPATH,
 ) -> None:
     """Run the interactive setup wizard."""
 
@@ -88,9 +79,7 @@ def cmd_setup(
         )
         raise typer.Exit(code=3)
 
-    c.print(
-        f"Creating configuration directory at [bold green]{runtime_config.configpath.absolute()}[/bold green]"
-    )
+    c.print(f"Creating configuration directory at [bold green]{runtime_config.configpath.absolute()}[/bold green]")
     claude_code_config = ClaudeCodeHarnessConfig()
     opencode_config = OpencodeHarnessConfig()
     antigravity_config = AntigravityHarnessConfig()
@@ -99,15 +88,11 @@ def cmd_setup(
         opencode=opencode_config,
         antigravity=antigravity_config,
     )
-    rig_config = RigConfig(
-        harness=harness_config, datapath=datadir, version=CURRENT_CONFIG_VERSION
-    )
+    rig_config = RigConfig(harness=harness_config, datapath=datadir, version=CURRENT_CONFIG_VERSION)
 
     new_config = asdict(rig_config)
     runtime_config.configpath.mkdir(parents=True, exist_ok=True)
-    _ = runtime_config.config_file.write_text(
-        json.dumps(new_config, default=str, indent=2)
-    )
+    _ = runtime_config.config_file.write_text(json.dumps(new_config, default=str, indent=2))
 
     c.print(f"Creating data directory at [bold green]{datadir.absolute()}[/bold green]")
     datadir.mkdir(parents=True, exist_ok=True)

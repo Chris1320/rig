@@ -37,12 +37,8 @@ def cmd_list(
 def cmd_create(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="New profile name")],
-    description: Annotated[
-        str, typer.Option("--desc", "-d", help="Short description of the profile")
-    ] = "",
-    set_default_flag: Annotated[
-        bool, typer.Option("--default", help="Set as default")
-    ] = False,
+    description: Annotated[str, typer.Option("--desc", "-d", help="Short description of the profile")] = "",
+    set_default_flag: Annotated[bool, typer.Option("--default", help="Set as default")] = False,
 ) -> None:
     """Create a new profile."""
 
@@ -97,15 +93,9 @@ def cmd_export(
 @app.command("import")
 def cmd_import(
     archive: Annotated[Path, typer.Argument(help="Path to archive")],
-    harness: Annotated[
-        str | None, typer.Option("--harness", "-h", help="Override target harness")
-    ] = None,
-    name: Annotated[
-        str | None, typer.Option("--name", "-n", help="Override target profile name")
-    ] = None,
-    overwrite: Annotated[
-        bool, typer.Option("--overwrite", help="Overwrite existing profile")
-    ] = False,
+    harness: Annotated[str | None, typer.Option("--harness", "-h", help="Override target harness")] = None,
+    name: Annotated[str | None, typer.Option("--name", "-n", help="Override target profile name")] = None,
+    overwrite: Annotated[bool, typer.Option("--overwrite", help="Overwrite existing profile")] = False,
 ) -> None:
     """Import a profile from an archive."""
 
