@@ -5,7 +5,7 @@ import typer
 from rich.console import Console
 
 from rig.cli.profile import app as profile_app
-from rig.config import config as rig_config
+from rig.config import config
 from rig.info import DEFAULT_DATAPATH, DESCRIPTION, NAME, VERSION
 
 app = typer.Typer(
@@ -33,15 +33,15 @@ def global_options(
 ) -> None:
     """Supply global options."""
 
-    rig_config.datapath = datadir
-    rig_config.json_mode = json_mode
-    rig_config.verbose = verbose
+    config.datapath = datadir
+    config.json_mode = json_mode
+    config.verbose = verbose
 
 
 @app.command(
     "run", context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
-def run_profile(
+def cmd_run(
     ctx: typer.Context,
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="Profile to run")],
@@ -50,29 +50,29 @@ def run_profile(
 
 
 @app.command("setup")
-def setup() -> None:
+def cmd_setup() -> None:
     """Run the interactive setup wizard."""
 
 
 @app.command("status")
-def status() -> None:
+def cmd_status() -> None:
     """Show status of harnesses and active profiles."""
 
 
 @app.command("config")
-def config() -> None:
+def cmd_config() -> None:
     """Show the current configuration of the application."""
 
     c = Console()
     c.print(f"[bold cyan]{NAME}[/bold cyan] - [dim]{DESCRIPTION}[/dim]")
     c.print(f"Version: [bold green]{VERSION}[/bold green]\n")
     c.print("[bold]Configuration:[/bold]")
-    for key, value in rig_config.__dict__.items():  # pyright: ignore[reportAny]
+    for key, value in config.__dict__.items():  # pyright: ignore[reportAny]
         c.print(f"  [bold]{key}[/bold]: {value}")
 
 
 @app.command("version")
-def version() -> None:
+def cmd_version() -> None:
     """Show the version of the application."""
 
     c = Console()

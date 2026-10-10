@@ -11,7 +11,7 @@ console = Console()
 
 
 @app.command("list")
-def list_profiles(
+def cmd_list(
     harness: Annotated[
         str | None,
         typer.Argument(help="Harness name"),
@@ -30,7 +30,7 @@ def list_profiles(
 
 
 @app.command("create")
-def create_profile(
+def cmd_create(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="New profile name")],
     description: Annotated[
@@ -44,7 +44,7 @@ def create_profile(
 
 
 @app.command("use")
-def use_profile(
+def cmd_use(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="Profile name to set as default")],
 ) -> None:
@@ -52,7 +52,7 @@ def use_profile(
 
 
 @app.command("delete")
-def delete_profile(
+def cmd_delete(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="Profile name")],
     force: Annotated[
@@ -64,7 +64,7 @@ def delete_profile(
 
 
 @app.command("export")
-def export_profile_cmd(
+def cmd_export(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="Profile name")],
     output: Annotated[
@@ -83,7 +83,7 @@ def export_profile_cmd(
 
 
 @app.command("import")
-def import_profile_cmd(
+def cmd_import(
     archive: Annotated[Path, typer.Argument(help="Path to archive")],
     harness: Annotated[
         str | None, typer.Option("--harness", "-h", help="Override target harness")
