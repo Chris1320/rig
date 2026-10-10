@@ -33,8 +33,15 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["src"]
 
+[tool.black]
+line-length = 120
+
 [tool.isort]
 profile = "black"
+line_length = 120
+
+[tool.pylint.format]
+max-line-length = 120
 
 [tool.pylint."messages control"]
 disable = [
