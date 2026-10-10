@@ -1,12 +1,22 @@
+import json
+import shutil
+from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated
 
 import typer
 from rich.console import Console
 
-from rig.cli.misc import require_setup_complete
+from rig.cli.misc import require_setup_complete, vprint
 from rig.cli.profile import app as profile_app
-from rig.config import runtime_config
+from rig.config import (
+    AntigravityHarnessConfig,
+    ClaudeCodeHarnessConfig,
+    HarnessConfig,
+    OpencodeHarnessConfig,
+    RigConfig,
+    runtime_config,
+)
 from rig.info import DEFAULT_DATAPATH, DESCRIPTION, NAME, VERSION
 
 app = typer.Typer(
@@ -53,8 +63,36 @@ def cmd_run(
 
 
 @app.command("setup")
-def cmd_setup() -> None:
+def cmd_setup(
+    clean: Annotated[
+        bool,
+        typer.Option("--clean", "-c", help="Remove existing configuration directory"),
+    ] = False,
+) -> None:
     """Run the interactive setup wizard."""
+
+    c = Console()
+    if clean and runtime_config.datapath.exists():
+        vprint("Removing existing configuration and data files...")
+        shutil.rmtree(runtime_config.datapath)
+
+    c.print(
+        f"Creating configuration and data directory at [bold green]{runtime_config.datapath}[/bold green]"
+    )
+    runtime_config.datapath.mkdir(parents=True, exist_ok=True)
+    claude_code_config = ClaudeCodeHarnessConfig()
+    opencode_config = OpencodeHarnessConfig()
+    antigravity_config = AntigravityHarnessConfig()
+    harness_config = HarnessConfig(
+        claude_code=claude_code_config,
+        opencode=opencode_config,
+        antigravity=antigravity_config,
+    )
+    rig_config = RigConfig(harness_config)
+
+    new_config = asdict(rig_config)
+
+    _ = runtime_config.configpath.write_text(json.dumps(new_config, indent=2))
 
 
 @app.command("status")
