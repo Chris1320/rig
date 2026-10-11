@@ -19,10 +19,32 @@ class RuntimeConfig:
 
 
 @dataclass()
+class ClaudeCodeProfile:
+    """Represents a profile for the Claude Code harness."""
+
+    # TODO: To be implemented
+
+
+@dataclass()
+class OpencodeProfile:
+    """Represents a profile for the OpenCode harness."""
+
+    # TODO: To be implemented
+
+
+@dataclass()
+class AntigravityProfile:
+    """Represents a profile for the Antigravity harness."""
+
+    # TODO: To be implemented
+
+
+@dataclass()
 class ClaudeCodeHarnessConfig:
     """Configuration for the Claude Code harness."""
 
     # TODO: To be implemented
+    profiles: list[ClaudeCodeProfile]
 
 
 @dataclass()
@@ -30,6 +52,7 @@ class OpencodeHarnessConfig:
     """Configuration for the OpenCode harness."""
 
     # TODO: To be implemented
+    profiles: list[OpencodeProfile]
 
 
 @dataclass()
@@ -37,6 +60,7 @@ class AntigravityHarnessConfig:
     """Configuration for the Antigravity harness."""
 
     # TODO: To be implemented
+    profiles: list[AntigravityProfile]
 
 
 @dataclass()
