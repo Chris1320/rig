@@ -1,5 +1,3 @@
-import json
-from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated
 
@@ -8,14 +6,7 @@ from rich.console import Console
 
 from rig.cli.misc import require_setup_complete
 from rig.cli.profile import app as profile_app
-from rig.config import (
-    AntigravityHarnessConfig,
-    ClaudeCodeHarnessConfig,
-    HarnessConfig,
-    OpencodeHarnessConfig,
-    RigConfig,
-    runtime_config,
-)
+from rig.config import RigConfig, runtime_config, save_config
 from rig.info import (
     CURRENT_CONFIG_VERSION,
     DEFAULT_CONFIGPATH,
@@ -28,7 +19,7 @@ from rig.info import (
 app = typer.Typer(
     help=f"{NAME} - {DESCRIPTION}",
     rich_markup_mode="rich",
-    no_args_is_help=False,
+    no_args_is_help=True,
 )
 app.add_typer(profile_app, name="profile")
 
@@ -69,30 +60,21 @@ def cmd_setup(
     c = Console()
     if runtime_config.configpath.exists() and any(runtime_config.configpath.iterdir()):
         c.print(
-            f"[bold yellow]WARNING[/bold yellow]: Configuration file already exists at [bold green]{runtime_config.config_file.absolute()}[/bold green]."
+            "[bold yellow]WARNING[/bold yellow]: Configuration file already exists at "
+            + f"[bold green]{runtime_config.config_file.absolute()}[/bold green]."
         )
         raise typer.Exit(code=2)
 
     if datadir.exists() and any(datadir.iterdir()):
         c.print(
-            f"[bold yellow]WARNING[/bold yellow]: Data directory already exists at [bold green]{datadir.absolute()}[/bold green]."
+            "[bold yellow]WARNING[/bold yellow]: Data directory already exists at "
+            + f"[bold green]{datadir.absolute()}[/bold green]."
         )
         raise typer.Exit(code=3)
 
     c.print(f"Creating configuration directory at [bold green]{runtime_config.configpath.absolute()}[/bold green]")
-    claude_code_config = ClaudeCodeHarnessConfig()
-    opencode_config = OpencodeHarnessConfig()
-    antigravity_config = AntigravityHarnessConfig()
-    harness_config = HarnessConfig(
-        claude_code=claude_code_config,
-        opencode=opencode_config,
-        antigravity=antigravity_config,
-    )
-    rig_config = RigConfig(harness=harness_config, datapath=datadir, version=CURRENT_CONFIG_VERSION)
-
-    new_config = asdict(rig_config)
-    runtime_config.configpath.mkdir(parents=True, exist_ok=True)
-    _ = runtime_config.config_file.write_text(json.dumps(new_config, default=str, indent=2))
+    rig_config = RigConfig(datapath=datadir, version=CURRENT_CONFIG_VERSION)
+    save_config(rig_config)
 
     c.print(f"Creating data directory at [bold green]{datadir.absolute()}[/bold green]")
     datadir.mkdir(parents=True, exist_ok=True)

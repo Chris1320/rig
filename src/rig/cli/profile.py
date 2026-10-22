@@ -7,7 +7,7 @@ from rich.table import Table
 
 from rig.cli.misc import require_setup_complete
 
-app = typer.Typer(help="Manage profiles of an agent harness.")
+app = typer.Typer(help="Manage profiles of an agent harness.", no_args_is_help=True)
 
 console = Console()
 

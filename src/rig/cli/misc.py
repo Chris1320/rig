@@ -38,6 +38,7 @@ def require_setup_complete() -> None:
     if not check_if_setup_complete():
         c = Console()
         c.print(
-            "[bold red]Error:[/bold red] Setup is not complete. Please run [bold green]rig setup[/bold green] to complete the setup process."
+            "[bold red]Error:[/bold red] Setup is not complete. Please run "
+            + "[bold green]rig setup[/bold green] to complete the setup process."
         )
         raise typer.Exit(code=1)
