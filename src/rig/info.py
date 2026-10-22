@@ -8,3 +8,5 @@ CURRENT_CONFIG_VERSION = 1.0
 MIN_SUPPORTED_CONFIG_VERSION = 1.0
 DEFAULT_CONFIGPATH = Path(Path.home() / ".config" / NAME)
 DEFAULT_DATAPATH = Path(Path.home() / ".local" / "share" / NAME)
+
+ACTIVE_MARKER_FILENAME = ".rig_active"

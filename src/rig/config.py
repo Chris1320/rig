@@ -4,7 +4,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Self
+from typing import Self
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
@@ -17,8 +17,7 @@ from rig.info import (
     NAME,
 )
 from rig.misc import utc_now_iso
-
-IsolationStrategy = Literal["symlink", "move"]
+from rig.models import IsolationStrategy
 
 
 def _default_datapath() -> Path:
