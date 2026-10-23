@@ -117,10 +117,8 @@ def test_runner_swaps_and_restores_previous_profile(
     _ = create_profile(cfg, "opencode", "default-prof", set_default=True)
     _ = create_profile(cfg, "opencode", "temp-prof", set_default=False)
 
-    # Write distinct marker files in each profile's config directory
-    _ = (opencode.profile_item_paths(data_dir, "default-prof")["config"] / "who.txt").write_text(
-        "default-prof", encoding="utf-8"
-    )
+    # Write distinct marker files in active $HOME (`default-prof`) and inactive `<datapath>` (`temp-prof`)
+    _ = (opencode.paths["config"] / "who.txt").write_text("default-prof", encoding="utf-8")
     _ = (opencode.profile_item_paths(data_dir, "temp-prof")["config"] / "who.txt").write_text(
         "temp-prof", encoding="utf-8"
     )

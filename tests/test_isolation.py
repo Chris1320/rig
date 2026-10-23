@@ -113,6 +113,7 @@ def test_check_harness_status_states(tmp_path: Path, isolated_home: Path) -> Non
     assert status.default_profile is None
 
     # 2. Active symlink state -> synced
+    cfg.harnesses["claude-code"].strategy = "symlink"
     cfg.harnesses["claude-code"].upsert_profile(ProfileEntry(name="work"))
     cfg.harnesses["claude-code"].default_profile = "work"
     activate_profile(claude, datadir, "work", "symlink")

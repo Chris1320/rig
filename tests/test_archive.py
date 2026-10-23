@@ -148,10 +148,9 @@ def test_export_archive_structure_matches_between_datapath_and_home_move(
             assert f_data.read() == f_home.read()
 
 
-def test_export_cache_exclusion_interactive_and_default_path(
+def test_export_cache_exclusion_and_mandatory_non_overwriting_output(
     isolated_env: tuple[Path, Path, Path],
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _, config_dir, data_dir = isolated_env
     opencode = get_harness("opencode")
@@ -161,23 +160,49 @@ def test_export_cache_exclusion_interactive_and_default_path(
     _ = (items["config"] / "cfg.txt").write_text("cfg", encoding="utf-8")
     _ = (items["cache"] / "big.cache").write_text("heavy", encoding="utf-8")
 
-    cwd_dir = tmp_path / "cwd"
-    cwd_dir.mkdir()
-    monkeypatch.chdir(cwd_dir)
+    # Omitting -o / --output fails as a required CLI option
+    assert runner.invoke(app, ["-c", str(config_dir), "profile", "export", "opencode", "dev"]).exit_code != 0
 
+    excluded_archive = tmp_path / "opencode-dev.tar.gz"
     assert (
         runner.invoke(
             app,
-            ["-c", str(config_dir), "profile", "export", "opencode", "dev", "--non-interactive"],
+            [
+                "-c",
+                str(config_dir),
+                "profile",
+                "export",
+                "opencode",
+                "dev",
+                "--output",
+                str(excluded_archive),
+                "--non-interactive",
+            ],
         ).exit_code
         == 0
     )
-    default_archive = cwd_dir / "opencode-dev.tar.gz"
-    with tarfile.open(default_archive, "r:gz") as tar:
+    with tarfile.open(excluded_archive, "r:gz") as tar:
         assert "cache/big.cache" not in tar.getnames()
         raw_manifest = tar.extractfile(ARCHIVE_MANIFEST_FILENAME)
         assert raw_manifest is not None
         assert ArchiveManifest.model_validate(json.loads(raw_manifest.read().decode("utf-8"))).caches_excluded is True
+
+    # Exporting to an existing file refuses to overwrite (and fails before interactive prompt)
+    existing_target = tmp_path / "do-not-overwrite.tar.gz"
+    _ = existing_target.write_bytes(b"precious-bytes")
+    res_exists = runner.invoke(
+        app,
+        ["-c", str(config_dir), "profile", "export", "opencode", "dev", "-o", str(existing_target)],
+    )
+    assert res_exists.exit_code == 1
+    assert "already exists" in res_exists.stdout
+    assert existing_target.read_bytes() == b"precious-bytes"
+
+    # Broken symlink at output path is also rejected without overwriting
+    broken_link = tmp_path / "broken-link.tar.gz"
+    broken_link.symlink_to(tmp_path / "missing-target.tar.gz")
+    with pytest.raises(ArchiveError, match="already exists"):
+        _ = export_profile(load_config(config_dir / "config.json"), "opencode", "dev", broken_link)
 
     included_archive = tmp_path / "with-cache.tar.gz"
     assert (
@@ -194,7 +219,7 @@ def test_export_cache_exclusion_interactive_and_default_path(
     assert (
         runner.invoke(
             app,
-            ["-c", str(config_dir), "profile", "import", str(default_archive), "-n", "dev-clean"],
+            ["-c", str(config_dir), "profile", "import", str(excluded_archive), "-n", "dev-clean"],
         ).exit_code
         == 0
     )
@@ -291,7 +316,7 @@ def test_export_skips_internal_symlinks_and_import_preserves_profile_on_conflict
     cfg = load_config(config_dir / "config.json")
     claude = get_harness("claude-code")
 
-    _ = create_profile(cfg, "claude-code", "active-sym", set_default=True)
+    _ = create_profile(cfg, "claude-code", "active-sym", set_default=True, strategy="symlink")
     items = claude.profile_item_paths(data_dir, "active-sym")
     _ = (items["config"] / "keep.txt").write_text("original", encoding="utf-8")
     (items["config"] / "debug-latest").symlink_to(items["config"] / "keep.txt")

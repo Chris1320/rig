@@ -48,9 +48,10 @@ def test_setup_migrates_existing_home_files_and_ignores_unused_harnesses(tmp_pat
     assert cfg.harnesses["antigravity"].default_profile is None
     assert cfg.harnesses["antigravity"].profiles == []
 
-    # Verify migrated data (including dereferenced symlink content) is preserved
+    # Verify migrated data (including dereferenced symlink content) is preserved under default `move` strategy
     claude = get_harness("claude-code")
-    assert claude.paths["config"].is_symlink()
+    assert cfg.harnesses["claude-code"].strategy == "move"
+    assert claude.paths["config"].is_dir() and not claude.paths["config"].is_symlink()
     assert (claude.paths["config"] / "credentials.json").read_text(encoding="utf-8") == '{"token": "abc"}\n'
     assert json.loads(claude.paths["config.json"].read_text(encoding="utf-8")) == {"linked": True}
 

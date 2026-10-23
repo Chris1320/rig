@@ -27,7 +27,7 @@ def test_default_rig_config_populates_all_harnesses(tmp_path: Path, monkeypatch:
     assert cfg.datapath == (tmp_path / ".local" / "share" / "rig").resolve()
     assert set(cfg.harnesses.keys()) == {"antigravity", "claude-code", "opencode"}
     for entry in cfg.harnesses.values():
-        assert entry.strategy == "symlink"
+        assert entry.strategy == "move"
         assert entry.default_profile is None
         assert entry.profiles == []
 

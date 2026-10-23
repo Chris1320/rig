@@ -202,7 +202,13 @@ def test_cli_rich_outputs_and_error_branches(
 
     assert runner.invoke(app, ["-c", str(cfg_dir), "profile", "list", "bogus"]).exit_code == 1
     assert runner.invoke(app, ["-c", str(cfg_dir), "profile", "use", "opencode", "missing"]).exit_code == 1
-    assert runner.invoke(app, ["-c", str(cfg_dir), "profile", "export", "opencode", "missing"]).exit_code == 1
+    assert (
+        runner.invoke(
+            app,
+            ["-c", str(cfg_dir), "profile", "export", "opencode", "missing", "-o", str(tmp_path / "out.tar.gz")],
+        ).exit_code
+        == 1
+    )
 
     # Corrupt config.json error branch on `rig status` and `rig config`
     _ = (cfg_dir / "config.json").write_text("{corrupt", encoding="utf-8")
