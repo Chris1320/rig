@@ -20,7 +20,7 @@ EOF
 build_wheel() {
     echo "==> Building wheel package via uv build..."
     mkdir -p "$OUTPUT_DIR_WHEEL"
-    uv build --wheel --out-dir "$OUTPUT_DIR_WHEEL"
+    uv build --wheel --no-create-gitignore --out-dir "$OUTPUT_DIR_WHEEL"
     echo "==> Wheel built in $OUTPUT_DIR_WHEEL"
 }
 
