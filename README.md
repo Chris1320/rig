@@ -54,6 +54,28 @@ rig profile export claude-code work -o claude-work.tar.gz
 rig profile import claude-work.tar.gz --name work-laptop
 ```
 
+## Rig Isolate
+
+### Build Fedora Image
+
+```bash
+podman build -f rigisolate.fedora.Dockerfile -t rigisolate:fedora .
+```
+
+#### Build Ubuntu Image
+
+```bash
+podman build -f rigisolate.ubuntu.Dockerfile -t rigisolate:ubuntu .
+```
+
+#### Run Interactively With Project Bind Mount
+
+```bash
+podman run -it --rm -v "$PWD:/workspace:z" rigisolate:fedora zsh
+# or...
+podman run -it --rm -v "$PWD:/workspace:z" rigisolate:ubuntu zsh
+```
+
 ## Roadmap
 
 - [x] (CLI) Create new profiles
