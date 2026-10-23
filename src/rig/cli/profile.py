@@ -7,7 +7,11 @@ from rich.table import Table
 
 from rig.cli.misc import exit_with_error, print_json, require_setup_complete, vprint
 from rig.config import ProfileEntry, RigConfig, load_config, runtime_config
-from rig.core.archive import export_profile, import_profile
+from rig.core.archive import (
+    export_profile,
+    import_profile,
+    validate_export_output_path,
+)
 from rig.core.profiles import (
     create_profile,
     delete_profile,
@@ -187,9 +191,9 @@ def cmd_export(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="Profile name")],
     output: Annotated[
-        Path | None,
+        Path,
         typer.Option("-o", "--output", help="Path to output archive"),
-    ] = None,
+    ],
     non_interactive: Annotated[
         bool,
         typer.Option(
@@ -204,8 +208,9 @@ def cmd_export(
     try:
         cfg = load_config()
         spec, _, _ = resolve_existing_profile(cfg, harness, name)
+        _ = validate_export_output_path(output)
 
-    except (ConfigError, UnknownHarnessError, ProfileError) as exc:
+    except (ConfigError, UnknownHarnessError, ProfileError, ArchiveError) as exc:
         exit_with_error(str(exc))
 
     exclude_caches = True

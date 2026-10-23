@@ -175,11 +175,35 @@ def _build_manifest_bytes(spec: HarnessSpec, profile: ProfileEntry, *, exclude_c
     return (json.dumps(manifest.model_dump(mode="json"), indent=2) + "\n").encode("utf-8")
 
 
+def validate_export_output_path(output_path: Path) -> Path:
+    """Validate that `output_path` does not already exist and return its normalized target path.
+
+    Args:
+        output_path: Destination archive path supplied by the caller.
+
+    Returns:
+        Normalized absolute destination path.
+
+    Raises:
+        ArchiveError: If `output_path` already exists as a file, directory, or symlink.
+    """
+
+    expanded = output_path.expanduser()
+    if expanded.is_symlink():
+        raise ArchiveError(f"Output path '{Path(os.path.abspath(expanded))}' already exists.")
+
+    target = expanded.resolve()
+    if target.exists() or target.is_symlink():
+        raise ArchiveError(f"Output path '{target}' already exists.")
+
+    return target
+
+
 def export_profile(
     config: RigConfig,
     harness: str,
     name: str,
-    output_path: Path | None = None,
+    output_path: Path,
     *,
     exclude_caches: bool = True,
 ) -> Path:
@@ -189,7 +213,7 @@ def export_profile(
         config: Loaded RigConfig instance.
         harness: Target harness key.
         name: Profile name to export.
-        output_path: Optional destination `.tar.gz` path. Defaults to `./<harness>-<name>.tar.gz`.
+        output_path: Destination `.tar.gz` path.
         exclude_caches: Whether to omit tracked items marked with `is_cache=True`.
 
     Returns:
@@ -198,15 +222,11 @@ def export_profile(
     Raises:
         UnknownHarnessError: If `harness` is not supported.
         ProfileError: If `name` is invalid or does not exist.
-        ArchiveError: If writing the archive fails or `output_path` is a directory.
+        ArchiveError: If `output_path` already exists or writing the archive fails.
     """
 
     spec, _, profile = resolve_existing_profile(config, harness, name)
-    raw_target = output_path if output_path is not None else Path.cwd() / f"{spec.key}-{name}.tar.gz"
-    target = raw_target.expanduser().resolve()
-
-    if target.exists() and target.is_dir():
-        raise ArchiveError(f"Output path '{target}' is a directory.")
+    target = validate_export_output_path(output_path)
 
     is_live_in_home = read_active_marker(config.datapath, spec.key) == name
     source_paths = spec.paths if is_live_in_home else spec.profile_item_paths(config.datapath, name)
@@ -214,11 +234,14 @@ def export_profile(
 
     try:
         with (
-            atomic_temp_path(target, prefix=".export-", suffix=".tar.gz.tmp") as tmp_path,
+            atomic_temp_path(target, prefix=".export-", suffix=".tar.gz.tmp", overwrite=False) as tmp_path,
             tarfile.open(tmp_path, mode="w:gz") as tar,
         ):
             _write_bytes_member(tar, ARCHIVE_MANIFEST_FILENAME, manifest_bytes)
             _add_tracked_items_to_tar(tar, spec, source_paths, exclude_caches=exclude_caches)
+
+    except FileExistsError as exc:
+        raise ArchiveError(f"Output path '{target}' already exists.") from exc
 
     except (OSError, tarfile.TarError) as exc:
         raise ArchiveError(f"Failed to export profile '{name}' to '{target}': {exc}") from exc

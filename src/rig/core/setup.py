@@ -37,7 +37,7 @@ def run_setup(datadir: Path) -> SetupResult:
 
     Detects non-symlink harness files/directories in `$HOME`, moves them into a
     `default` profile under `<datadir>/profiles/<harness>/default/`, and activates
-    `default` under the `symlink` strategy so existing user data is preserved.
+    `default` under the harness's configured default strategy so existing user data is preserved.
 
     Args:
         datadir: Target data directory path.
@@ -76,10 +76,8 @@ def run_setup(datadir: Path) -> SetupResult:
         if not migrate_home_to_profile(spec, data_dir, "default"):
             continue
 
-        activate_profile(spec, data_dir, "default", "symlink")
-
         entry = rig_config.harnesses[spec.key]
-        entry.strategy = "symlink"
+        activate_profile(spec, data_dir, "default", entry.strategy)
         entry.default_profile = "default"
         entry.upsert_profile(
             ProfileEntry(

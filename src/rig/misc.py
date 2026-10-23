@@ -42,19 +42,28 @@ def validate_iso_timestamp(value: str) -> str:
 
 
 @contextmanager
-def atomic_temp_path(target: Path, *, prefix: str = ".tmp-", suffix: str = ".tmp") -> Generator[Path]:
-    """Yield a temporary sibling path and atomically replace `target` on clean exit.
+def atomic_temp_path(
+    target: Path,
+    *,
+    prefix: str = ".tmp-",
+    suffix: str = ".tmp",
+    overwrite: bool = True,
+) -> Generator[Path]:
+    """Yield a temporary sibling path and atomically commit it to `target` on clean exit.
 
     Args:
-        target: Final destination file path to replace on success.
+        target: Final destination file path.
         prefix: Filename prefix for the temporary sibling file.
         suffix: Filename suffix for the temporary sibling file.
+        overwrite: When True, atomically replaces `target` via `os.replace`. When False,
+            uses `os.link` so an existing file at `target` raises `FileExistsError` without overwriting.
 
     Yields:
         Path to the temporary sibling file ready to be written.
 
     Raises:
-        OSError: If directory creation, temporary file creation, or atomic rename fails.
+        FileExistsError: If `overwrite` is False and `target` already exists.
+        OSError: If directory creation, temporary file creation, or atomic commit fails.
     """
 
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -63,7 +72,12 @@ def atomic_temp_path(target: Path, *, prefix: str = ".tmp-", suffix: str = ".tmp
     tmp_path = Path(raw_tmp)
     try:
         yield tmp_path
-        os.replace(tmp_path, target)
+        if overwrite:
+            os.replace(tmp_path, target)
+
+        else:
+            os.link(tmp_path, target)
+            tmp_path.unlink()
 
     except Exception:
         if tmp_path.exists():
