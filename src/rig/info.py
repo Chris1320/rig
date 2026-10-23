@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Final
 
 NAME: Final[str] = "rig"
-VERSION: Final[str] = "0.1.0"
+VERSION: Final[str] = "1.0.0"
 DESCRIPTION: Final[str] = "Manage multiple profiles for agent harnesses."
 
 CURRENT_CONFIG_VERSION: Final[float] = 1.0

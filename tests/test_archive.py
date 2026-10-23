@@ -53,7 +53,7 @@ def _valid_manifest_bytes(
 ) -> bytes:
     payload = {
         "version": version,
-        "rig_version": "0.1.0",
+        "rig_version": "1.0.0",
         "harness": harness,
         "profile_name": profile_name,
         "description": "Sample",
