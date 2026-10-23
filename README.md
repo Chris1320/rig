@@ -24,7 +24,7 @@ switch between work, personal, and project environments without conflicts.
 > | **[Claude Code](https://claude.com/product/claude-code)**                        | `claude-code` |
 > | **[Google Antigravity CLI](https://antigravity.google/product/antigravity-cli)** | `antigravity` |
 
-- Isolate harness state in `$HOME` using either `symlink` (default) or `move` strategies.
+- Isolate harness state in `$HOME` using either `move` (default) or `symlink` strategies.
 - Run a harness temporarily under any profile with per-harness lockfile protection (`rig run`), automatically restoring the previous default profile on exit.
 - Export and import profile archives with optional cache exclusion.
 - Pass `--json` (`-j`) to inspection and management commands for machine-readable output.
