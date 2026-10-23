@@ -53,7 +53,7 @@ class ProfileEntry(BaseModel):
 class HarnessEntryConfig(BaseModel):
     """Configuration for a single agent harness."""
 
-    strategy: IsolationStrategy = "symlink"
+    strategy: IsolationStrategy = "move"
     default_profile: str | None = None
     profiles: list[ProfileEntry] = Field(default_factory=list)
 
