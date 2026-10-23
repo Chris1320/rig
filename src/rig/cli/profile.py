@@ -5,11 +5,39 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from rig.cli.misc import require_setup_complete
+from rig.cli.misc import exit_with_error, print_json, require_setup_complete
+from rig.config import ProfileEntry, RigConfig, load_config, runtime_config
+from rig.core.profiles import create_profile, delete_profile, list_profiles, use_profile
+from rig.exceptions import (
+    ConfigError,
+    IsolationError,
+    ProfileError,
+    UnknownHarnessError,
+)
+from rig.models import IsolationStrategy
 
 app = typer.Typer(help="Manage profiles of an agent harness.", no_args_is_help=True)
 
 console = Console()
+
+
+def _print_profile_result_json(cfg: RigConfig, harness: str, profile: ProfileEntry) -> None:
+    """Print profile result in JSON format.
+
+    Args:
+        cfg: The RigConfig object.
+        harness: The name of the harness.
+        profile: The ProfileEntry object.
+    """
+
+    print_json(
+        {
+            "harness": harness,
+            "profile": profile.model_dump(mode="json"),
+            "is_default": cfg.harnesses[harness].default_profile == profile.name,
+            "strategy": cfg.harnesses[harness].strategy,
+        }
+    )
 
 
 @app.command("list")
@@ -22,6 +50,16 @@ def cmd_list(
     """List all profiles."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        items = list_profiles(cfg, harness=harness)
+
+    except (ConfigError, UnknownHarnessError) as exc:
+        exit_with_error(str(exc))
+
+    if runtime_config.json_mode:
+        print_json({"profiles": [item.to_dict() for item in items]})
+        return
 
     table = Table(title="Agent Harness Profiles", header_style="bold cyan")
     table.add_column("Harness", style="bold")
@@ -29,6 +67,16 @@ def cmd_list(
     table.add_column("Default", justify="center")
     table.add_column("Description")
     table.add_column("Last Updated", style="dim")
+
+    for item in items:
+        default_mark = "[bold green]*[/bold green]" if item.is_default else ""
+        table.add_row(
+            item.harness,
+            item.name,
+            default_mark,
+            item.description,
+            item.updated_at,
+        )
 
     console.print(table)
 
@@ -39,20 +87,64 @@ def cmd_create(
     name: Annotated[str, typer.Argument(help="New profile name")],
     description: Annotated[str, typer.Option("--desc", "-d", help="Short description of the profile")] = "",
     set_default_flag: Annotated[bool, typer.Option("--default", help="Set as default")] = False,
+    strategy: Annotated[
+        IsolationStrategy | None,
+        typer.Option("--strategy", help="Isolation strategy (symlink or move)"),
+    ] = None,
 ) -> None:
     """Create a new profile."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        created = create_profile(
+            cfg,
+            harness=harness,
+            name=name,
+            description=description,
+            set_default=set_default_flag,
+            strategy=strategy,
+        )
+
+    except (ConfigError, UnknownHarnessError, ProfileError, IsolationError) as exc:
+        exit_with_error(str(exc))
+
+    if runtime_config.json_mode:
+        _print_profile_result_json(cfg, harness, created)
+        return
+
+    console.print(f"Created profile [bold green]{created.name}[/bold green] for [bold cyan]{harness}[/bold cyan].")
+    if set_default_flag:
+        console.print(f"Activated [bold green]{created.name}[/bold green] as default profile.")
 
 
 @app.command("use")
 def cmd_use(
     harness: Annotated[str, typer.Argument(help="Harness name")],
     name: Annotated[str, typer.Argument(help="Profile name to set as default")],
+    strategy: Annotated[
+        IsolationStrategy | None,
+        typer.Option("--strategy", help="Isolation strategy (symlink or move)"),
+    ] = None,
 ) -> None:
     """Set a profile as the default."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        updated = use_profile(cfg, harness=harness, name=name, strategy=strategy)
+
+    except (ConfigError, UnknownHarnessError, ProfileError, IsolationError) as exc:
+        exit_with_error(str(exc))
+
+    if runtime_config.json_mode:
+        _print_profile_result_json(cfg, harness, updated)
+        return
+
+    console.print(
+        f"Using profile [bold green]{updated.name}[/bold green] for [bold cyan]{harness}[/bold cyan] "
+        + f"(strategy: [bold]{cfg.harnesses[harness].strategy}[/bold])."
+    )
 
 
 @app.command("delete")
@@ -67,6 +159,18 @@ def cmd_delete(
     """Delete a profile."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        delete_profile(cfg, harness=harness, name=name, force=force)
+
+    except (ConfigError, UnknownHarnessError, ProfileError) as exc:
+        exit_with_error(str(exc))
+
+    if runtime_config.json_mode:
+        print_json({"harness": harness, "deleted": name})
+        return
+
+    console.print(f"Deleted profile [bold green]{name}[/bold green] from [bold cyan]{harness}[/bold cyan].")
 
 
 @app.command("export")

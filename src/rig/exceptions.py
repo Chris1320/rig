@@ -27,3 +27,13 @@ class SetupError(Exception):
     def __init__(self, message: str, exit_code: int = 1) -> None:
         super().__init__(message)
         self.exit_code: int = exit_code
+
+
+@final
+class ProfileError(Exception):
+    """Raised when a profile operation fails validation or preconditions."""
+
+
+@final
+class RunnerError(Exception):
+    """Raised when running a harness under a temporary profile fails."""

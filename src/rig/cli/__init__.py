@@ -15,8 +15,15 @@ from rig.cli.profile import app as profile_app
 from rig.config import RigConfig, load_config, runtime_config
 from rig.core.harnesses import HARNESSES
 from rig.core.isolation import check_harness_status
+from rig.core.runner import run_harness_profile
 from rig.core.setup import check_if_setup_complete, run_setup
-from rig.exceptions import ConfigError, SetupError
+from rig.exceptions import (
+    ConfigError,
+    ProfileError,
+    RunnerError,
+    SetupError,
+    UnknownHarnessError,
+)
 from rig.info import DEFAULT_CONFIGPATH, DEFAULT_DATAPATH, DESCRIPTION, NAME, VERSION
 
 app = typer.Typer(
@@ -52,6 +59,15 @@ def cmd_run(
     """Run an agent harness under a specific profile."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        exit_code = run_harness_profile(cfg, harness=harness, profile_name=name, args=ctx.args)
+
+    except (ConfigError, UnknownHarnessError, ProfileError, RunnerError) as exc:
+        exit_with_error(str(exc))
+
+    if exit_code != 0:
+        raise typer.Exit(code=exit_code)
 
 
 @app.command("setup")

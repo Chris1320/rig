@@ -39,9 +39,13 @@ class HarnessSpec:
         """Set of tracked item keys marked as cache directories."""
         return frozenset(item.key for item in self.items if item.is_cache)
 
+    def harness_profiles_dir(self, datapath: Path) -> Path:
+        """Return the absolute directory path containing all profiles for this harness."""
+        return datapath.expanduser().resolve() / "profiles" / self.key
+
     def profile_dir(self, datapath: Path, profile_name: str) -> Path:
         """Return the absolute directory path for a given profile."""
-        return datapath.expanduser().resolve() / "profiles" / self.key / profile_name
+        return self.harness_profiles_dir(datapath) / profile_name
 
     def profile_item_paths(self, datapath: Path, profile_name: str) -> dict[str, Path]:
         """Map of tracked item keys to their absolute paths inside the profile directory."""

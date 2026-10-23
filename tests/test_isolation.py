@@ -9,7 +9,6 @@ from rig.core.isolation import (
     activate_profile,
     check_harness_status,
     deactivate_harness,
-    purge_active_home_items,
     read_active_marker,
     write_active_marker,
 )
@@ -99,20 +98,6 @@ def test_conflict_safety_refuses_untracked_home_files(tmp_path: Path, isolated_h
     write_active_marker(datadir, "claude-code", "work")
     with pytest.raises(IsolationError, match="Conflicting path exists"):
         activate_profile(claude, datadir, "work", "symlink")
-
-
-def test_purge_active_home_items_in_move_mode(tmp_path: Path, isolated_home: Path) -> None:
-    _ = isolated_home
-    datadir = tmp_path / "data"
-
-    agy = get_harness("antigravity")
-    activate_profile(agy, datadir, "temp", "move")
-    assert read_active_marker(datadir, "antigravity") == "temp"
-
-    purge_active_home_items(agy, datadir)
-    assert read_active_marker(datadir, "antigravity") is None
-    for home_path in agy.paths.values():
-        assert not home_path.exists()
 
 
 def test_check_harness_status_states(tmp_path: Path, isolated_home: Path) -> None:

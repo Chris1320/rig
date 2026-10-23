@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rig.config import HarnessEntryConfig, RigConfig
-from rig.core.harnesses import HarnessSpec
+from rig.core.harnesses import HarnessSpec, get_harness
 from rig.exceptions import IsolationError
 from rig.info import ACTIVE_MARKER_FILENAME
 from rig.models import HarnessKey, IsolationStrategy
@@ -35,18 +35,18 @@ class HarnessStatus:
         }
 
 
-def active_marker_path(datapath: Path, harness_key: HarnessKey) -> Path:
+def active_marker_path(datapath: Path, harness: HarnessKey) -> Path:
     """Return the path to the `.rig_active` marker file for a harness.
 
     Args:
         datapath: The root data directory path.
-        harness_key: The harness identifier.
+        harness: The harness identifier.
 
     Returns:
         The resolved path to `<datapath>/profiles/<harness_key>/.rig_active`.
     """
 
-    return datapath.expanduser().resolve() / "profiles" / harness_key / ACTIVE_MARKER_FILENAME
+    return get_harness(harness).harness_profiles_dir(datapath) / ACTIVE_MARKER_FILENAME
 
 
 def read_active_marker(datapath: Path, harness_key: HarnessKey) -> str | None:
@@ -185,26 +185,6 @@ def deactivate_harness(spec: HarnessSpec, datapath: Path) -> None:
     for item in spec.items:
         if item.path.is_symlink():
             item.path.unlink()
-
-
-def purge_active_home_items(spec: HarnessSpec, datapath: Path) -> None:
-    """Remove live `$HOME` items or symlinks for an active profile without restoring to datapath.
-
-    Args:
-        spec: The harness specification.
-        datapath: The root data directory path.
-    """
-
-    active_profile = read_active_marker(datapath, spec.key)
-    for item in spec.items:
-        home_target = item.path
-        if home_target.is_symlink():
-            home_target.unlink()
-
-        elif active_profile is not None and home_target.exists():
-            _remove_path(home_target)
-
-    clear_active_marker(datapath, spec.key)
 
 
 def _verify_no_home_conflicts(spec: HarnessSpec, datapath: Path) -> None:
