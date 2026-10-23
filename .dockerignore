@@ -1,0 +1,13 @@
+.git
+.venv
+build/
+build-nuitka/
+dist/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.DS_Store
