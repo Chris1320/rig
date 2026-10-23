@@ -37,13 +37,18 @@ Build outputs are saved to `dist/`:
 Source files live in `src/rig/`:
 
 - `src/rig/__init__.py`: Package root and console entrypoint `main`.
-- `src/rig/__main__.py`: Direct module execution entrypoint for Nuitka.
-- `src/rig/info.py`: Metadata constants `NAME`, `VERSION`, `DESCRIPTION`, and `DEFAULT_DATAPATH`.
-- `src/rig/config.py`: Runtime configuration dataclass `RigConfig` and active `config` instance.
-- `src/rig/cli/`: Typer command handlers. `src/rig/cli/__init__.py` handles global options `--datadir`, `--json`, and `--verbose`, registers top-level commands `run`, `setup`, `status`, `config`, and `version`, then mounts the `profile` subcommand group defined in `src/rig/cli/profile.py`.
-- `src/rig/core/`: Profile management logic, setup validation, and harness integrations.
+- `src/rig/__main__.py`: Direct module execution entrypoint (`python -m rig` and Nuitka).
+- `src/rig/info.py`: `Final` package metadata, version bounds, marker/lock/manifest filenames, and `PROFILE_NAME_PATTERN`.
+- `src/rig/exceptions.py`: All `@final` domain exceptions (`ConfigError`, `UnknownHarnessError`, `IsolationError`, `SetupError`, `ProfileError`, `RunnerError`, `ArchiveError`).
+- `src/rig/models.py`: Shared `Literal` type aliases (`HarnessKey`, `IsolationStrategy`, `ItemKind`). Keep domain dataclasses in their owning `core/` modules.
+- `src/rig/misc.py`: Shared UTC ISO-8601 timestamp helpers and `atomic_temp_path`.
+- `src/rig/config.py`: `RuntimeConfig` dataclass (`runtime_config` singleton) plus Pydantic `RigConfig`, `HarnessEntryConfig`, `ProfileEntry`, `load_config`, and atomic `save_config`.
+- `src/rig/cli/`: Typer command handlers. `src/rig/cli/__init__.py` handles global options `--config-dir` (`-c`), `--json` (`-j`), and `--verbose` (`-v`), registers top-level commands `run`, `setup` (`--data-dir` / `-d`), `status`, `config`, and `version`, and mounts `src/rig/cli/profile.py` (`list`, `create`, `use`, `delete`, `export`, `import`).
+- `src/rig/core/`: `harnesses.py` (built-in harness specs), `isolation.py` (`symlink`/`move` strategies and `.rig_active`), `setup.py` (initial setup and `$HOME` migration), `profiles.py` (profile CRUD), `runner.py` (`.rig.lock` and temporary `rig run` execution), and `archive.py` (`.tar.gz` export and import).
 
 ## Conventions and gotchas
 
 - Keep version numbers synchronized. `version` in `pyproject.toml` and `VERSION` in `src/rig/info.py` must match. GitHub Actions release detection compares the `pyproject.toml` version against the previous commit.
+- Write Google-style docstrings (`Args:`, `Returns:`/`Yields:`, `Raises:`) on public functions and helpers, `@final` on exception classes in `src/rig/exceptions.py`, and `Final[...]` annotations on constants in `src/rig/info.py`.
+- `TrackedItem.path` and `RigConfig` resolve `Path.home()` dynamically at call time, whereas `DEFAULT_CONFIGPATH` and `DEFAULT_DATAPATH` in `src/rig/info.py` bind at import time. Isolate `$HOME` in CLI tests with `monkeypatch.setenv("HOME", ...)` alongside `-c <config_dir>` and `setup -d <data_dir>` (see `isolated_env` in `tests/conftest.py`).
 - Use conventional commits, such as `feat:`, `fix:`, `chore:`, or `build:`.
