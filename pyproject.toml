@@ -1,6 +1,6 @@
 [project]
 name = "rig"
-version = "0.1.0"
+version = "1.0.0"
 description = "Manage multiple profiles for each agent harnesses."
 readme = "README.md"
 authors = [{ name = "Chris1320", email = "me@chrisfromnowhere.me" }]
@@ -8,7 +8,6 @@ requires-python = ">=3.14"
 dependencies = [
     "pydantic>=2.10.0",
     "rich>=13.9.0",
-    "textual>=1.0.0",
     "typer>=0.15.0",
 ]
 
