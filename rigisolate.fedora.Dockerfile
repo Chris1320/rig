@@ -1,4 +1,4 @@
-FROM fedora:44
+FROM docker.io/library/fedora:44
 
 # hadolint ignore=DL3064
 ARG USERNAME=user

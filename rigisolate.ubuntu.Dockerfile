@@ -1,4 +1,4 @@
-FROM ubuntu:26.04
+FROM docker.io/library/ubuntu:26.04
 
 # hadolint ignore=DL3064
 ARG USERNAME=user

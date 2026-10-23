@@ -59,13 +59,13 @@ rig profile import claude-work.tar.gz --name work-laptop
 ### Build Fedora Image
 
 ```bash
-podman build -f rigisolate.fedora.Dockerfile -t rigisolate:fedora .
+podman build --format docker -f rigisolate.fedora.Dockerfile -t rigisolate:fedora .
 ```
 
 #### Build Ubuntu Image
 
 ```bash
-podman build -f rigisolate.ubuntu.Dockerfile -t rigisolate:ubuntu .
+podman build --format docker -f rigisolate.ubuntu.Dockerfile -t rigisolate:ubuntu .
 ```
 
 #### Run Interactively With Project Bind Mount
