@@ -5,7 +5,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from rig.cli.misc import exit_with_error, print_json, require_setup_complete
+from rig.cli.misc import exit_with_error, print_json, require_setup_complete, vprint
 from rig.config import ProfileEntry, RigConfig, load_config, runtime_config
 from rig.core.archive import export_profile, import_profile
 from rig.core.profiles import (
@@ -169,9 +169,10 @@ def cmd_delete(
     require_setup_complete()
     try:
         cfg = load_config()
+        vprint(f"Deleting profile '{name}' from '{harness}' (force={force})")
         delete_profile(cfg, harness=harness, name=name, force=force)
 
-    except (ConfigError, UnknownHarnessError, ProfileError) as exc:
+    except (ConfigError, UnknownHarnessError, ProfileError, IsolationError) as exc:
         exit_with_error(str(exc))
 
     if runtime_config.json_mode:

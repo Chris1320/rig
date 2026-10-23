@@ -15,6 +15,7 @@ from rig.core.harnesses import HarnessSpec, get_harness
 from rig.core.isolation import (
     activate_profile,
     deactivate_harness,
+    harness_lock,
     read_active_marker,
     verify_no_home_conflicts,
 )
@@ -23,7 +24,6 @@ from rig.core.profiles import (
     resolve_existing_profile,
     validate_profile_name,
 )
-from rig.core.runner import harness_lock
 from rig.exceptions import ArchiveError, ProfileError, RunnerError
 from rig.info import (
     ARCHIVE_MANIFEST_FILENAME,

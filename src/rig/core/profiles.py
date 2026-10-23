@@ -4,8 +4,8 @@ from pathlib import Path
 
 from rig.config import HarnessEntryConfig, ProfileEntry, RigConfig, save_config
 from rig.core.harnesses import HARNESSES, HarnessSpec, get_harness
-from rig.core.isolation import activate_profile, deactivate_harness
-from rig.exceptions import IsolationError, ProfileError
+from rig.core.isolation import activate_profile, deactivate_harness, harness_lock
+from rig.exceptions import IsolationError, ProfileError, RunnerError
 from rig.info import PROFILE_NAME_PATTERN
 from rig.misc import utc_now_iso
 from rig.models import HarnessKey, IsolationStrategy
@@ -180,17 +180,22 @@ def create_profile(  # pylint: disable=too-many-arguments
         raise ProfileError(f"Profile '{name}' already exists for harness '{spec.key}'.")
 
     target_strategy: IsolationStrategy = strategy if strategy is not None else entry_cfg.strategy
-    _ = spec.init_profile_dir(config.datapath, name)
     try:
-        if set_default:
-            activate_profile(spec, config.datapath, name, target_strategy)
-            entry_cfg.default_profile = name
+        with harness_lock(config.datapath, spec.key):
+            _ = spec.init_profile_dir(config.datapath, name)
+            try:
+                if set_default:
+                    activate_profile(spec, config.datapath, name, target_strategy)
+                    entry_cfg.default_profile = name
 
-    except IsolationError:
-        if prof_dir.exists():
-            shutil.rmtree(prof_dir)
+            except IsolationError:
+                if prof_dir.exists():
+                    shutil.rmtree(prof_dir)
 
-        raise
+                raise
+
+    except RunnerError as exc:
+        raise ProfileError(str(exc)) from exc
 
     entry_cfg.strategy = target_strategy
     profile = ProfileEntry(name=name, description=description)
@@ -217,13 +222,18 @@ def use_profile(
         The updated ProfileEntry.
 
     Raises:
-        ProfileError: If the profile does not exist.
+        ProfileError: If the profile does not exist or the harness is locked.
         IsolationError: If activating the profile fails.
     """
 
     spec, entry_cfg, existing = resolve_existing_profile(config, harness, name)
     target_strategy: IsolationStrategy = strategy if strategy is not None else entry_cfg.strategy
-    activate_profile(spec, config.datapath, name, target_strategy)
+    try:
+        with harness_lock(config.datapath, spec.key):
+            activate_profile(spec, config.datapath, name, target_strategy)
+
+    except RunnerError as exc:
+        raise ProfileError(str(exc)) from exc
 
     entry_cfg.strategy = target_strategy
     entry_cfg.default_profile = name
@@ -248,19 +258,24 @@ def delete_profile(
         force: Allow deleting the currently active default profile.
 
     Raises:
-        ProfileError: If the profile does not exist or is the active default without `force`.
+        ProfileError: If the profile does not exist, is locked, or is the active default without `force`.
     """
 
     spec, entry_cfg, _ = resolve_existing_profile(config, harness, name)
-    if entry_cfg.default_profile == name:
-        if not force:
-            raise ProfileError(f"Profile '{name}' is the active default for '{spec.key}'. Pass --force to delete it.")
+    if entry_cfg.default_profile == name and not force:
+        raise ProfileError(f"Profile '{name}' is the active default for '{spec.key}'. Pass --force to delete it.")
 
-        deactivate_harness(spec, config.datapath)
+    try:
+        with harness_lock(config.datapath, spec.key):
+            if entry_cfg.default_profile == name:
+                deactivate_harness(spec, config.datapath)
 
-    prof_dir = spec.profile_dir(config.datapath, name)
-    if prof_dir.exists():
-        shutil.rmtree(prof_dir)
+            prof_dir = spec.profile_dir(config.datapath, name)
+            if prof_dir.exists():
+                shutil.rmtree(prof_dir)
+
+    except RunnerError as exc:
+        raise ProfileError(str(exc)) from exc
 
     _ = entry_cfg.remove_profile(name)
     save_config(config)

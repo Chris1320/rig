@@ -10,6 +10,7 @@ from rig.cli.misc import (
     print_app_banner,
     print_json,
     require_setup_complete,
+    vprint,
 )
 from rig.cli.profile import app as profile_app
 from rig.config import RigConfig, load_config, runtime_config
@@ -48,6 +49,7 @@ def global_options(
     runtime_config.configpath = configdir
     runtime_config.json_mode = json_mode
     runtime_config.verbose = verbose
+    vprint(f"Using config file: {runtime_config.config_file}")
 
 
 @app.command("run", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})

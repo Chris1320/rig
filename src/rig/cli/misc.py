@@ -77,6 +77,9 @@ def vprint(
         force_enable: Whether to force enable printing regardless of verbose mode.
     """
 
+    if runtime_config.json_mode and not force_enable:
+        return
+
     if runtime_config.verbose or force_enable:
         if use_rich:
             Console().print(*((prefix,) + args), sep=sep, end=end)

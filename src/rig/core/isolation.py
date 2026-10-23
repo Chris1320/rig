@@ -1,11 +1,14 @@
+import fcntl
 import shutil
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
 from rig.config import HarnessEntryConfig, RigConfig
 from rig.core.harnesses import HarnessSpec, get_harness
-from rig.exceptions import IsolationError
-from rig.info import ACTIVE_MARKER_FILENAME
+from rig.exceptions import IsolationError, RunnerError
+from rig.info import ACTIVE_MARKER_FILENAME, LOCK_FILENAME
 from rig.models import HarnessKey, IsolationStrategy
 
 
@@ -47,6 +50,58 @@ def active_marker_path(datapath: Path, harness: HarnessKey) -> Path:
     """
 
     return get_harness(harness).harness_profiles_dir(datapath) / ACTIVE_MARKER_FILENAME
+
+
+def lockfile_path(datapath: Path, harness_key: HarnessKey) -> Path:
+    """Return the path to the per-harness lockfile.
+
+    Args:
+        datapath: Root data directory path.
+        harness_key: Harness identifier.
+
+    Returns:
+        Resolved path to the lockfile.
+    """
+
+    return get_harness(harness_key).harness_profiles_dir(datapath) / LOCK_FILENAME
+
+
+@contextmanager
+def harness_lock(datapath: Path, harness_key: HarnessKey) -> Generator[None]:
+    """Acquire an exclusive non-blocking lock on the harness's `.rig.lock` file.
+
+    Args:
+        datapath: Root data directory path.
+        harness_key: Harness identifier.
+
+    Yields:
+        None while holding the exclusive lock.
+
+    Raises:
+        RunnerError: If another `rig` process already holds the harness lock.
+    """
+
+    lock_path = lockfile_path(datapath, harness_key)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = lock_path.open("w", encoding="utf-8")
+    try:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    except OSError as exc:
+        lock_file.close()
+        raise RunnerError(
+            f"Harness '{harness_key}' is already locked by another running 'rig' process ({lock_path})."
+        ) from exc
+
+    try:
+        yield
+
+    finally:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+        finally:
+            lock_file.close()
 
 
 def read_active_marker(datapath: Path, harness_key: HarnessKey) -> str | None:

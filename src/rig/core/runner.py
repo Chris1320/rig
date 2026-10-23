@@ -1,65 +1,17 @@
-import fcntl
 import subprocess
-from collections.abc import Generator, Sequence
-from contextlib import contextmanager
-from pathlib import Path
+from collections.abc import Sequence
 
 from rig.config import RigConfig
-from rig.core.harnesses import get_harness
-from rig.core.isolation import activate_profile, deactivate_harness
+from rig.core.isolation import (
+    activate_profile,
+    deactivate_harness,
+    harness_lock,
+    lockfile_path,
+)
 from rig.core.profiles import resolve_existing_profile
 from rig.exceptions import IsolationError, RunnerError
-from rig.info import LOCK_FILENAME
-from rig.models import HarnessKey
 
-
-def lockfile_path(datapath: Path, harness_key: HarnessKey) -> Path:
-    """Return the path to the per-harness lockfile `<datapath>/profiles/<harness>/.rig.lock`.
-
-    Args:
-        datapath: Root data directory path.
-        harness_key: Harness identifier.
-
-    Returns:
-        Resolved path to the lockfile.
-    """
-
-    return get_harness(harness_key).harness_profiles_dir(datapath) / LOCK_FILENAME
-
-
-@contextmanager
-def harness_lock(datapath: Path, harness_key: HarnessKey) -> Generator[None]:
-    """Acquire an exclusive non-blocking lock on the harness's `.rig.lock` file.
-
-    Args:
-        datapath: Root data directory path.
-        harness_key: Harness identifier.
-
-    Raises:
-        RunnerError: If another `rig` process already holds the harness lock.
-    """
-
-    lock_path = lockfile_path(datapath, harness_key)
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_file = lock_path.open("w", encoding="utf-8")
-    try:
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-
-    except OSError as exc:
-        lock_file.close()
-        raise RunnerError(
-            f"Harness '{harness_key}' is already locked by another running 'rig' process ({lock_path})."
-        ) from exc
-
-    try:
-        yield
-
-    finally:
-        try:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-
-        finally:
-            lock_file.close()
+__all__ = ["harness_lock", "lockfile_path", "run_harness_profile"]
 
 
 def run_harness_profile(
