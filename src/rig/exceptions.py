@@ -37,3 +37,8 @@ class ProfileError(Exception):
 @final
 class RunnerError(Exception):
     """Raised when running a harness under a temporary profile fails."""
+
+
+@final
+class ArchiveError(Exception):
+    """Raised when profile archive export or import fails."""

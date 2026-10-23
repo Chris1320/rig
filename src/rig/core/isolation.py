@@ -187,8 +187,16 @@ def deactivate_harness(spec: HarnessSpec, datapath: Path) -> None:
             item.path.unlink()
 
 
-def _verify_no_home_conflicts(spec: HarnessSpec, datapath: Path) -> None:
-    """Raise IsolationError if `$HOME` contains untracked non-symlink items."""
+def verify_no_home_conflicts(spec: HarnessSpec, datapath: Path) -> None:
+    """Raise IsolationError if `$HOME` contains untracked non-symlink items for `spec`.
+
+    Args:
+        spec: The harness specification.
+        datapath: The root data directory path.
+
+    Raises:
+        IsolationError: If an untracked non-symlink file or directory exists at a target `$HOME` path.
+    """
 
     active_profile = read_active_marker(datapath, spec.key)
     if active_profile is None:
@@ -231,7 +239,7 @@ def activate_profile(
             if filesystem operations fail.
     """
 
-    _verify_no_home_conflicts(spec, datapath)
+    verify_no_home_conflicts(spec, datapath)
 
     try:
         deactivate_harness(spec, datapath)

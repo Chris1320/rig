@@ -7,8 +7,16 @@ from rich.table import Table
 
 from rig.cli.misc import exit_with_error, print_json, require_setup_complete
 from rig.config import ProfileEntry, RigConfig, load_config, runtime_config
-from rig.core.profiles import create_profile, delete_profile, list_profiles, use_profile
+from rig.core.archive import export_profile, import_profile
+from rig.core.profiles import (
+    create_profile,
+    delete_profile,
+    list_profiles,
+    resolve_existing_profile,
+    use_profile,
+)
 from rig.exceptions import (
+    ArchiveError,
     ConfigError,
     IsolationError,
     ProfileError,
@@ -192,6 +200,45 @@ def cmd_export(
     """Export a profile as an archive."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        spec, _, _ = resolve_existing_profile(cfg, harness, name)
+
+    except (ConfigError, UnknownHarnessError, ProfileError) as exc:
+        exit_with_error(str(exc))
+
+    exclude_caches = True
+    if spec.cache_keys and not non_interactive and not runtime_config.json_mode:
+        exclude_caches = typer.confirm("Exclude cache directories from archive?", default=True)
+
+    try:
+        archive_path = export_profile(
+            cfg,
+            harness=spec.key,
+            name=name,
+            output_path=output,
+            exclude_caches=exclude_caches,
+        )
+
+    except (UnknownHarnessError, ProfileError, ArchiveError) as exc:
+        exit_with_error(str(exc))
+
+    caches_excluded = exclude_caches and bool(spec.cache_keys)
+    if runtime_config.json_mode:
+        print_json(
+            {
+                "harness": spec.key,
+                "profile": name,
+                "archive": str(archive_path),
+                "caches_excluded": caches_excluded,
+            }
+        )
+        return
+
+    console.print(
+        f"Exported profile [bold green]{name}[/bold green] from [bold cyan]{spec.key}[/bold cyan] "
+        + f"to [bold]{archive_path}[/bold]."
+    )
 
 
 @app.command("import")
@@ -204,3 +251,23 @@ def cmd_import(
     """Import a profile from an archive."""
 
     require_setup_complete()
+    try:
+        cfg = load_config()
+        target_harness, imported = import_profile(
+            cfg,
+            archive_path=archive,
+            harness=harness,
+            name=name,
+            overwrite=overwrite,
+        )
+
+    except (ConfigError, UnknownHarnessError, ProfileError, IsolationError, ArchiveError) as exc:
+        exit_with_error(str(exc))
+
+    if runtime_config.json_mode:
+        _print_profile_result_json(cfg, target_harness, imported)
+        return
+
+    console.print(
+        f"Imported profile [bold green]{imported.name}[/bold green] into [bold cyan]{target_harness}[/bold cyan]."
+    )

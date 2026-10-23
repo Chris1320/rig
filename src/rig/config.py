@@ -1,8 +1,5 @@
 import json
-import os
-import tempfile
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Self
 
@@ -16,7 +13,7 @@ from rig.info import (
     MIN_SUPPORTED_CONFIG_VERSION,
     NAME,
 )
-from rig.misc import utc_now_iso
+from rig.misc import atomic_temp_path, utc_now_iso, validate_iso_timestamp
 from rig.models import IsolationStrategy
 
 
@@ -50,13 +47,7 @@ class ProfileEntry(BaseModel):
     @field_validator("created_at", "updated_at", mode="after")
     @classmethod
     def _validate_iso_timestamp(cls, value: str) -> str:
-        try:
-            _ = datetime.fromisoformat(value)
-
-        except ValueError as exc:
-            raise ValueError(f"Invalid timestamp: '{value}'") from exc
-
-        return value
+        return validate_iso_timestamp(value)
 
 
 class HarnessEntryConfig(BaseModel):
@@ -193,6 +184,9 @@ def load_config(path: Path | None = None) -> RigConfig:
 
     Returns:
         The loaded and validated RigConfig object.
+
+    Raises:
+        ConfigError: If the configuration file is missing, unreadable, or fails schema validation.
     """
 
     target = _resolve_config_path(path)
@@ -219,24 +213,16 @@ def save_config(config: RigConfig, path: Path | None = None) -> None:
     Args:
         config: The RigConfig object to serialize and save.
         path: Optional path to the configuration file. If None, the default from runtime_config is used.
+
+    Raises:
+        ConfigError: If writing or atomically replacing the configuration file fails.
     """
 
     target = _resolve_config_path(path)
+    payload = json.dumps(config.model_dump(mode="json"), indent=2) + "\n"
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(config.model_dump(mode="json"), indent=2) + "\n"
-        fd, tmp_name = tempfile.mkstemp(dir=target.parent, prefix=".config.", suffix=".tmp")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
-                _ = tmp_file.write(payload)
-
-            os.replace(tmp_name, target)
-
-        except Exception:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
-
-            raise
+        with atomic_temp_path(target, prefix=".config.", suffix=".tmp") as tmp_path:
+            _ = tmp_path.write_text(payload, encoding="utf-8")
 
     except OSError as exc:
         raise ConfigError(f"Failed to write configuration file at {target}: {exc}") from exc

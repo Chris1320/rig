@@ -1,5 +1,6 @@
 import shutil
 from dataclasses import dataclass
+from pathlib import Path
 
 from rig.config import HarnessEntryConfig, ProfileEntry, RigConfig, save_config
 from rig.core.harnesses import HARNESSES, HarnessSpec, get_harness
@@ -86,6 +87,27 @@ def resolve_existing_profile(
     return spec, entry_cfg, existing
 
 
+def profile_exists(
+    entry_cfg: HarnessEntryConfig,
+    spec: HarnessSpec,
+    datapath: Path,
+    name: str,
+) -> bool:
+    """Return True if `name` is already registered in `entry_cfg` or has a directory on disk.
+
+    Args:
+        entry_cfg: Harness configuration entry.
+        spec: Harness specification.
+        datapath: Root data directory path.
+        name: Profile name to check.
+
+    Returns:
+        True if the profile exists in config or on disk, False otherwise.
+    """
+
+    return entry_cfg.get_profile(name) is not None or spec.profile_dir(datapath, name).exists()
+
+
 def list_profiles(config: RigConfig, harness: str | None = None) -> list[ProfileListItem]:
     """List profiles across all harnesses or for a single `harness`.
 
@@ -154,7 +176,7 @@ def create_profile(  # pylint: disable=too-many-arguments
     entry_cfg = config.harnesses[spec.key]
     prof_dir = spec.profile_dir(config.datapath, name)
 
-    if entry_cfg.get_profile(name) is not None or prof_dir.exists():
+    if profile_exists(entry_cfg, spec, config.datapath, name):
         raise ProfileError(f"Profile '{name}' already exists for harness '{spec.key}'.")
 
     target_strategy: IsolationStrategy = strategy if strategy is not None else entry_cfg.strategy
